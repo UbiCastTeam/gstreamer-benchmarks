@@ -18,6 +18,18 @@ optional arguments:
   -l, --list-tests      list all available tests
 ```
 
+## Adding video samples
+
+To use actual video samples instead of generated video, just drop them into samples/ with the following filename syntax: name-width-height-framerate.mp4 (e.g. bbb-1920-1080-30.mp4) and add them to the SAMPLES variable in the actual test: 
+
+```
+    e.SAMPLES = [
+        'pattern=black-1920-1080-30',
+		...
+        'sample=mysample-1920-1080-30.mp4',
+    ]
+```
+
 ## List available tests
 
 ```
