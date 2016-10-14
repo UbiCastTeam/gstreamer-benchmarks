@@ -1,5 +1,9 @@
 # gstreamer-benchmarks
 
+A python-based gstreamer benchmarking tool that currently has:
+* a performance benchmark of gstreamer-vaapi, software codecs, nvenc, omx (pi & jetson)
+* some v4l compliance tests
+* some glimagesink benchmarks
 
 ## Usage
 
