@@ -40,3 +40,18 @@ Available tests:
 ```
 ./run_tests.py -t tests/encoding-i420.py,tests/encoding-nv12.py
 ```
+## Output
+
+Results are written to a text file (result-hostname-1476458424.txt) as a tsv (tab-separated file)
+
+```
+###########################################
+####### Tests finished, results ###########
+###########################################
+
+[Pass]
+Gstreamer 1.9.90: I420 Encoding benchmark, GPU: Intel Corporation Xeon E3-1200 v3/4th Gen Core Processor Integrated Graphics Controller (rev 06) CPU: Intel(R) Core(TM) i7-4771 CPU @ 3.50GHz Intel(R) Haswell Desktop
+Encoder Sample  Mean fps    Min fps Max fps Mean Mpix/s Min Mpix/s  Max Mpix/s
+x264enc speed-preset=ultrafast bitrate=20000 tune=zerolatency key-int-max=30    pattern=black-1920-1080-30  316 307 328 655 637 680
+vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=black-1920-1080-30  154 150 159 320 311 330
+```

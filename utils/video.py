@@ -37,6 +37,10 @@ def get_num_buffers_for_path(colorspace, width, height, raw_buf_file):
     return min(int(0.45*memsize/bufsize), 1000)
 
 def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file=RAW_BUF_FILE, framerate=30, num_buffers=None):
+    if not os.path.exists(location):
+        print("Sample %s not found, skipping" % location)
+        return None, None, None
+
     print('Generating intermediate raw sample from %s' % location)
     bufsize = get_buffer_size_bytes(colorspace, width, height)
     tmp_location = os.path.join(os.path.dirname(location), TMP_BUF_FILE)

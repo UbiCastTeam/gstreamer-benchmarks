@@ -94,6 +94,7 @@ class EncodingTest:
         }
 
         for sample in self.SAMPLES:
+            num_buffers = None
             if 'pattern' in sample:
                 framerate = 30
                 sample_name, w, h, framerate = self.parse_pattern(sample)
@@ -105,39 +106,40 @@ class EncodingTest:
                 num_buffers, bufsize, caps = video.generate_buffers_from_file(input_file_path, colorspace, w, h, self.RAW_BUF_FILE, framerate=framerate)
                 input_file = self.RAW_BUF_FILE
 
-            for plugin_string in available_plugins:
-                plugin_string = plugin_string.format(**encoding_params)
-                cmd = self.CMD_PATTERN %(input_file, bufsize, caps, plugin_string)
+            if num_buffers:
+                for plugin_string in available_plugins:
+                    plugin_string = plugin_string.format(**encoding_params)
+                    cmd = self.CMD_PATTERN %(input_file, bufsize, caps, plugin_string)
 
-                def _run():
-                    try:
-                        run_cmd(cmd)
-                    except Exception as e:
-                        print(e)
+                    def _run():
+                        try:
+                            run_cmd(cmd)
+                        except Exception as e:
+                            print(e)
 
-                # check cmd and push sample data into RAM
-                print("Heating cache for %s" %plugin_string)
-                took = time_took(_run)
-                if took <= 0:
-                    print_red('<<< Test failed: %s' %plugin_string)
-                else:
-                    print('<<< Running test (%s passes): %s (%s)' %(self.PASS_COUNT, plugin_string, sample))
-                    fps_results = list()
-                    mpx_results = list()
-                    for i in range(self.PASS_COUNT):
-                        # Run it twice to ensure that file was in cache
-                        took = time_took(_run)
-                        if took:
-                            fps = int(round(num_buffers/took))
-                            mpx = int(round(fps*w*h/1000000))
-                        else:
-                            fps = 0
-                            mpx = 0
-                        fps_results.append(fps)
-                        mpx_results.append(mpx)
-                    result = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(plugin_string, sample, int(mean(fps_results)), min(fps_results), max(fps_results), int(mean(mpx_results)), min(mpx_results), max(mpx_results))
-                    #print(result)
-                    info += "\n%s" %result
+                    # check cmd and push sample data into RAM
+                    print("Heating cache for %s" %plugin_string)
+                    took = time_took(_run)
+                    if took <= 0:
+                        print_red('<<< Test failed: %s' %plugin_string)
+                    else:
+                        print('<<< Running test (%s passes): %s (%s)' %(self.PASS_COUNT, plugin_string, sample))
+                        fps_results = list()
+                        mpx_results = list()
+                        for i in range(self.PASS_COUNT):
+                            # Run it twice to ensure that file was in cache
+                            took = time_took(_run)
+                            if took:
+                                fps = int(round(num_buffers/took))
+                                mpx = int(round(fps*w*h/1000000))
+                            else:
+                                fps = 0
+                                mpx = 0
+                            fps_results.append(fps)
+                            mpx_results.append(mpx)
+                        result = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(plugin_string, sample, int(mean(fps_results)), min(fps_results), max(fps_results), int(mean(mpx_results)), min(mpx_results), max(mpx_results))
+                        #print(result)
+                        info += "\n%s" %result
         if os.path.exists(self.RAW_BUF_FILE):
             os.remove(self.RAW_BUF_FILE)
         self.write_results(info)
