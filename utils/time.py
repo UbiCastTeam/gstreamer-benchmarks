@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2015, Florent Thiery 
 
-import os
 import time
 import socket
 
