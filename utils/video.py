@@ -4,6 +4,7 @@
 
 import os
 from utils.mem import get_free_space_bytes
+from utils.files import check_temp_path
 from utils.process import run_cmd
 
 COLORSPACES_BPP = {
@@ -39,6 +40,9 @@ def get_num_buffers_for_path(colorspace, width, height, raw_buf_file):
 def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file=RAW_BUF_FILE, framerate=30, num_buffers=None):
     if not os.path.exists(location):
         print("Sample %s not found, skipping" % location)
+        return None, None, None
+    if not check_temp_path(raw_buf_file):
+        print("Cannot use temporary file %s, skipping" % raw_buf_file)
         return None, None, None
 
     print('Generating intermediate raw sample from %s' % location)
@@ -91,6 +95,9 @@ def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file
     return num_buffers, bufsize, caps
 
 def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BUF_FILE, pattern='black', num_buffers=None, framerate=30):
+    if not check_temp_path(raw_buf_file):
+        print("Cannot use temporary file %s, skipping" % raw_buf_file)
+        return None, None, None
     pattern_caps = "video/x-raw\,\ format\=\(string\){colorspace}\,\ width\=\(int\){width}\,\ height\=\(int\){height}\,\ framerate\=\(fraction\){framerate}/1"
     pattern_gen_buf = "gst-launch-1.0 videotestsrc num-buffers={num_buffers} pattern={pattern} ! %s ! filesink location=%s" %(pattern_caps, raw_buf_file)
     if os.path.isfile(raw_buf_file):
