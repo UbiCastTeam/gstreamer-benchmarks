@@ -65,6 +65,8 @@ class EncodingTest:
         return filename, int(w), int(h), int(f)
 
     def run(self):
+        success = False
+
         if hw.is_intel() and hasattr(self, 'PLUGINS_INTEL'):
             self.PLUGINS.extend(self.PLUGINS_INTEL)
         elif hw.is_nvidia() and hasattr(self, 'PLUGINS_NV'):
@@ -140,10 +142,11 @@ class EncodingTest:
                         result = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(plugin_string, sample, int(mean(fps_results)), min(fps_results), max(fps_results), int(mean(mpx_results)), min(mpx_results), max(mpx_results))
                         #print(result)
                         info += "\n%s" %result
+                        success = True
         if os.path.exists(self.RAW_BUF_FILE):
             os.remove(self.RAW_BUF_FILE)
         self.write_results(info)
-        return (True, info)
+        return (success, info)
 
 if __name__ == '__main__':
     from utils.run import run_test
