@@ -20,7 +20,7 @@ class EncodingTest:
     RAW_BUF_FILE = '/tmp/buf.raw'
 
     PASS_COUNT = 5
-    CHANNELS = 3
+    CHANNELS = 4
     COLORSPACE = 'I420'
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
