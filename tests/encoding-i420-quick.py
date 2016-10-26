@@ -8,7 +8,7 @@ def run():
     e = EncodingTest()
     e.COLORSPACE = 'I420'
     e.RAW_BUF_FILE = '/tmp/buf.raw'
-    e.RAW_BUF_FILE = '/var/buf.raw'
+    e.RAW_BUF_FILE = '/tmp/buf.raw'
     e.PASS_COUNT = 1
     e.PLUGINS = [
             ['x264enc', 'x264enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency key-int-max={keyframes}'],
