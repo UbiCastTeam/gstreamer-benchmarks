@@ -20,6 +20,7 @@ class EncodingTest:
     RAW_BUF_FILE = '/tmp/buf.raw'
 
     PASS_COUNT = 5
+    CHANNELS = 3
     COLORSPACE = 'I420'
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
@@ -41,7 +42,7 @@ class EncodingTest:
         'sample=bbb-1920-1080-30.mp4',
     ]
 
-    CMD_PATTERN = "gst-launch-1.0 -f filesrc location=%s blocksize=%s ! %s ! queue name=encoder ! %s ! fakesink"
+    CMD_PATTERN = "gst-launch-1.0 -f filesrc location=%s blocksize=%s ! %s ! tee name=encoder ! %s"
 
     def write_results(self, data):
         fname = get_timestamped_fname()
@@ -50,7 +51,7 @@ class EncodingTest:
         print('Wrote results to %s' % fname)
 
     def get_test_banner(self):
-        info = "Gstreamer %s: %s Encoding benchmark, GPU: %s CPU: %s" %(get_gst_version(), self.COLORSPACE, hw.gpu(), hw.cpu())
+        info = "Gstreamer %s: %s Encoding benchmark (%s passes), GPU: %s CPU: %s" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu())
         info += "\nEncoder\tSample\tMean fps\tMin fps\tMax fps\tMean Mpix/s\tMin Mpix/s\tMax Mpix/s"
         return info
 
@@ -109,40 +110,49 @@ class EncodingTest:
                 input_file = self.RAW_BUF_FILE
 
             if num_buffers:
-                for plugin_string in available_plugins:
-                    plugin_string = plugin_string.format(**encoding_params)
-                    cmd = self.CMD_PATTERN %(input_file, bufsize, caps, plugin_string)
+                for channel_count in range(1, self.CHANNELS + 1):
+                    for plugin_string in available_plugins:
+                        plugin_string = plugin_string.format(**encoding_params)
+                        encoders = list()
+                        for i in range(1, channel_count + 1):
+                            encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! fakesink "  % (i, plugin_string))
+                        encoders_string = "encoder. ! ".join(encoders)
+                        print(encoders_string)
+                        num_buffers_test = (1 + channel_count)*num_buffers
+                        cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
+                        print(cmd)
 
-                    def _run():
-                        try:
-                            run_cmd(cmd)
-                        except Exception as e:
-                            print(e)
+                        def _run():
+                            try:
+                                run_cmd(cmd)
+                            except Exception as e:
+                                print(e)
 
-                    # check cmd and push sample data into RAM
-                    print("Heating cache for %s" %plugin_string)
-                    took = time_took(_run)
-                    if took <= 0:
-                        print_red('<<< Test failed: %s' %plugin_string)
-                    else:
-                        print('<<< Running test (%s passes): %s (%s)' %(self.PASS_COUNT, plugin_string, sample))
-                        fps_results = list()
-                        mpx_results = list()
-                        for i in range(self.PASS_COUNT):
-                            # Run it twice to ensure that file was in cache
-                            took = time_took(_run)
-                            if took:
-                                fps = int(round(num_buffers/took))
-                                mpx = int(round(fps*w*h/1000000))
-                            else:
-                                fps = 0
-                                mpx = 0
-                            fps_results.append(fps)
-                            mpx_results.append(mpx)
-                        result = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(plugin_string, sample, int(mean(fps_results)), min(fps_results), max(fps_results), int(mean(mpx_results)), min(mpx_results), max(mpx_results))
-                        #print(result)
-                        info += "\n%s" %result
-                        success = True
+                        # check cmd and push sample data into RAM
+                        print("Heating cache for %s" %plugin_string)
+                        took = time_took(_run)
+                        if took <= 0:
+                            print_red('<<< Test failed: %s' %plugin_string)
+                        else:
+                            print('<<< Running test (%s passes, %s channels): %s (%s)' %(self.PASS_COUNT, channel_count, plugin_string, sample))
+                            fps_results = list()
+                            mpx_results = list()
+                            for i in range(self.PASS_COUNT):
+                                # Run it twice to ensure that file was in cache
+                                took = time_took(_run)
+                                if took:
+                                    fps = int(round(num_buffers_test/took))
+                                    mpx = int(round(fps*w*h/1000000))
+                                else:
+                                    fps = 0
+                                    mpx = 0
+                                fps_results.append(fps)
+                                mpx_results.append(mpx)
+                            sample_desc = "%s-%sch" % (sample, channel_count)
+                            result = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(plugin_string, sample_desc, int(mean(fps_results)), min(fps_results), max(fps_results), int(mean(mpx_results)), min(mpx_results), max(mpx_results))
+                            #print(result)
+                            info += "\n%s" %result
+                            success = True
         if os.path.exists(self.RAW_BUF_FILE):
             os.remove(self.RAW_BUF_FILE)
         self.write_results(info)
