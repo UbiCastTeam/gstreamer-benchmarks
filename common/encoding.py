@@ -117,10 +117,8 @@ class EncodingTest:
                         for i in range(1, channel_count + 1):
                             encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! fakesink "  % (i, plugin_string))
                         encoders_string = "encoder. ! ".join(encoders)
-                        print(encoders_string)
                         num_buffers_test = (1 + channel_count)*num_buffers
                         cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
-                        print(cmd)
 
                         def _run():
                             try:
