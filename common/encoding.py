@@ -123,8 +123,10 @@ class EncodingTest:
                         def _run():
                             try:
                                 run_cmd(cmd)
+                                return True
                             except Exception as e:
                                 print(e)
+                                return False
 
                         # check cmd and push sample data into RAM
                         print("Heating cache for %s" %plugin_string)
