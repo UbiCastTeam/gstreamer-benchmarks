@@ -7,7 +7,6 @@ from common.encoding import EncodingTest
 def run():
     e = EncodingTest()
     e.COLORSPACE = 'NV12'
-    e.PASS_COUNT = 3
     e.RAW_BUF_FILE = '/tmp/buf.raw'
     e.PLUGINS = [
             ['x264enc', 'x264enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency key-int-max={keyframes}'],

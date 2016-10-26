@@ -8,7 +8,6 @@ def run():
     e = EncodingTest()
     e.COLORSPACE = 'YUY2'
     e.RAW_BUF_FILE = '/tmp/buf.raw'
-    e.PASS_COUNT = 3
     e.PLUGINS = [
         ['x264enc', 'videoconvert ! queue ! x264enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency key-int-max={keyframes}'],
         ['x265enc', 'videoconvert ! video/x-raw, format=(string)I420 ! queue ! x265enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency'],

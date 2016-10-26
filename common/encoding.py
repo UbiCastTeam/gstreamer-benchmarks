@@ -19,7 +19,7 @@ class EncodingTest:
     # ensure that /tmp is a tmpfs or ramfs
     RAW_BUF_FILE = '/tmp/buf.raw'
 
-    PASS_COUNT = 3
+    PASS_COUNT = 5
     COLORSPACE = 'I420'
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
