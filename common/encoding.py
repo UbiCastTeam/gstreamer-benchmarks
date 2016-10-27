@@ -20,7 +20,7 @@ class EncodingTest:
     RAW_BUF_FILE = '/tmp/buf.raw'
 
     PASS_COUNT = 5
-    CHANNELS = 4
+    CHANNELS = 2
     COLORSPACE = 'I420'
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
@@ -118,7 +118,7 @@ class EncodingTest:
                         for i in range(1, channel_count + 1):
                             encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! fakesink "  % (i, plugin_string))
                         encoders_string = "encoder. ! ".join(encoders)
-                        num_buffers_test = (1 + channel_count)*num_buffers
+                        num_buffers_test = channel_count*num_buffers
                         cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
 
                         def _run():
