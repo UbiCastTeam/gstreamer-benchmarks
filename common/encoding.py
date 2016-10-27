@@ -69,6 +69,7 @@ class EncodingTest:
         success = False
 
         if hw.is_intel() and hasattr(self, 'PLUGINS_INTEL'):
+            os.environ['LIBVA_DRIVER_NAME'] = 'i965'
             self.PLUGINS.extend(self.PLUGINS_INTEL)
         elif hw.is_nvidia() and hasattr(self, 'PLUGINS_NV'):
             self.PLUGINS.extend(self.PLUGINS_NV)
