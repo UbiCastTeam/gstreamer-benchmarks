@@ -67,3 +67,15 @@ Encoder Sample  Mean fps    Min fps Max fps Mean Mpix/s Min Mpix/s  Max Mpix/s
 x264enc speed-preset=ultrafast bitrate=20000 tune=zerolatency key-int-max=30    pattern=black-1920-1080-30  316 307 328 655 637 680
 vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=black-1920-1080-30  154 150 159 320 311 330
 ```
+
+## Deps
+
+* python >= 3.4
+* gstreamer >= 1.0
+* gst-plugins-base
+* gst-plugins-good
+* gst-plugins-ugly
+* gstreamer-vaapi
+* gst-libav (optional, for samples)
+
+nvenc (in -bad) must be compiled by hand
