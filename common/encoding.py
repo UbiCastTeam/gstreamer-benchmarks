@@ -97,6 +97,8 @@ class EncodingTest:
             'cpu_count': hw.cpu_count(),
         }
 
+        total_tests = len(self.SAMPLES) * self.CHANNELS + 1
+        test_count = 0
         for sample in self.SAMPLES:
             num_buffers = None
             if 'pattern' in sample:
@@ -130,10 +132,11 @@ class EncodingTest:
                                 return False
 
                         # check cmd and push sample data into RAM
-                        print("Heating cache for %s" %plugin_string)
+                        test_count += 1
+                        print("Heating cache for test %s/%s (%i%%) %s" % (test_count, total_tests, 100*test_count/float(total_tests), plugin_string))
                         took = time_took(_run)
                         if took <= 0:
-                            print_red('<<< Test failed: %s' %plugin_string)
+                            print_red('<<< Heat test failed: %s' %plugin_string)
                         else:
                             print('<<< Running test (%s passes, %s channels): %s (%s)' %(self.PASS_COUNT, channel_count, plugin_string, sample))
                             fps_results = list()
