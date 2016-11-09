@@ -97,7 +97,7 @@ class EncodingTest:
             'cpu_count': hw.cpu_count(),
         }
 
-        total_tests = len(self.SAMPLES) * self.CHANNELS + 1
+        total_tests = len(self.SAMPLES) * self.CHANNELS * len(self.PLUGINS)
         test_count = 0
         for sample in self.SAMPLES:
             num_buffers = None
