@@ -90,8 +90,8 @@ def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file
     run_cmd(cmd)
     #caps = pattern_caps.format(**format_dict) 
     caps = "videoparse width=%s height=%s framerate=%s format=%s" %(width, height, framerate, colorspace.lower())
-    if os.path.isfile(TMP_BUF_FILE):
-        os.remove(TMP_BUF_FILE)
+    if os.path.isfile(tmp_location):
+        os.remove(tmp_location)
     return num_buffers, bufsize, caps
 
 def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BUF_FILE, pattern='black', num_buffers=None, framerate=30):
