@@ -89,7 +89,7 @@ def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file
     print('Generate final sample')
     run_cmd(cmd)
     #caps = pattern_caps.format(**format_dict) 
-    caps = "videoparse width=%s height=%s framerate=%s format=%s" %(width, height, framerate, colorspace.lower())
+    caps = "rawvideoparse width=%s height=%s framerate=%s format=%s" %(width, height, framerate, colorspace.lower())
     if os.path.isfile(tmp_location):
         os.remove(tmp_location)
     return num_buffers, bufsize, caps
@@ -120,7 +120,7 @@ def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BU
 
     bufsize = get_buffer_size_bytes(colorspace, width, height)
     #caps = pattern_caps.format(**format_dict) 
-    caps = "videoparse width=%s height=%s framerate=%s format=%s" %(width, height, framerate, colorspace.lower())
+    caps = "rawvideoparse width=%s height=%s framerate=%s format=%s" %(width, height, framerate, colorspace.lower())
     return num_buffers, bufsize, caps
 
 def scan_samples_folder(folder, extensions=[".mp4", ".qt"]):
