@@ -7,7 +7,7 @@ import os
 from statistics import mean
 
 from utils.time import time_took, get_timestamped_fname
-from utils.process import run_cmd
+from utils.process import run_gst_cmd
 from utils.colors import print_red 
 
 from utils.gstreamer import is_plugin_present, get_gst_version
@@ -131,17 +131,9 @@ class EncodingTest:
                             num_buffers_test = channel_count*num_buffers
                             cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
 
-                            def _run():
-                                try:
-                                    run_cmd(cmd)
-                                    return True
-                                except Exception as e:
-                                    print(e)
-                                    return False
-
                             # check cmd and push sample data into RAM
                             print("Heating cache for test %s/%s (%i%%) %s" % (test_count, total_tests, 100*test_count/float(total_tests), plugin_string))
-                            took = time_took(_run)
+                            took = run_gst_cmd(cmd)
                             if took <= 0:
                                 print_red('<<< Heat test failed: %s' %plugin_string)
                             else:
@@ -150,7 +142,7 @@ class EncodingTest:
                                 mpx_results = list()
                                 for i in range(self.PASS_COUNT):
                                     # Run it twice to ensure that file was in cache
-                                    took = time_took(_run)
+                                    took = run_gst_cmd(cmd)
                                     if took:
                                         if not self.LIVE:
                                             fps = int(round(num_buffers_test/took))

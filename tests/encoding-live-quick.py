@@ -11,11 +11,12 @@ def run():
     e.RAW_BUF_FILE = '/tmp/buf.raw'
     e.PASS_COUNT = 1
     e.CHANNELS = 10
+    e.MAX_BUFFERS = 150
     e.LIVE = True
     e.SCAN_SAMPLES = False
 
     e.PLUGINS = [
-        ['x264enc', 'x264enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency key-int-max={keyframes}'],
+        #['x264enc', 'x264enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency key-int-max={keyframes}'],
     ]
 
     e.PLUGINS_INTEL = [
