@@ -32,12 +32,12 @@ def get_buffer_size_bytes(colorspace, width, height):
 RAW_BUF_FILE = '/tmp/buf.raw'
 TEMP_BUF_FILE = 'tmp.raw'
 
-def get_num_buffers_for_path(colorspace, width, height, raw_buf_file):
+def get_num_buffers_for_path(colorspace, width, height, raw_buf_file, max_buffers=1000):
     bufsize = get_buffer_size_bytes(colorspace, width, height)
     memsize = get_free_space_bytes(os.path.dirname(os.path.abspath(raw_buf_file)))
-    return min(int(0.45*memsize/bufsize), 1000)
+    return min(int(0.45*memsize/bufsize), max_buffers)
 
-def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file=RAW_BUF_FILE, framerate=30, num_buffers=None):
+def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file=RAW_BUF_FILE, framerate=30, num_buffers=None, max_buffers=1000):
     if not os.path.exists(location):
         print("Sample %s not found, skipping" % location)
         return None, None, None
@@ -82,7 +82,7 @@ def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file
     tmp_size = os.path.getsize(tmp_location)
 
     if not num_buffers:
-        num_buffers = format_dict['num_buffers'] = min(get_num_buffers_for_path(colorspace, width, height, raw_buf_file), int(tmp_size/bufsize))
+        num_buffers = format_dict['num_buffers'] = min(get_num_buffers_for_path(colorspace, width, height, raw_buf_file, max_buffers), int(tmp_size/bufsize))
         print('Generate %s buffers (%ss)' % (num_buffers, int(round(num_buffers/framerate))))
     pattern_gen_buf = "gst-launch-1.0 filesrc location={tmp_location} num-buffers={num_buffers} blocksize={blocksize} ! filesink location=%s" % raw_buf_file
     cmd = pattern_gen_buf.format(**format_dict)
@@ -94,7 +94,7 @@ def generate_buffers_from_file(location, colorspace, width, height, raw_buf_file
         os.remove(tmp_location)
     return num_buffers, bufsize, caps
 
-def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BUF_FILE, pattern='black', num_buffers=None, framerate=30):
+def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BUF_FILE, pattern='black', num_buffers=None, framerate=30, max_buffers=1000):
     if not check_temp_path(raw_buf_file):
         print("Cannot use temporary file %s, skipping" % raw_buf_file)
         return None, None, None
@@ -103,7 +103,7 @@ def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BU
     if os.path.isfile(raw_buf_file):
         os.remove(raw_buf_file)
     if not num_buffers:
-        num_buffers = get_num_buffers_for_path(colorspace, width, height, raw_buf_file)
+        num_buffers = get_num_buffers_for_path(colorspace, width, height, raw_buf_file, max_buffers)
     format_dict = {
         'num_buffers': num_buffers,
         'duration': int(round(num_buffers/framerate)),

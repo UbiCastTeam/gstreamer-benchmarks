@@ -23,6 +23,7 @@ class EncodingTest:
     PASS_COUNT = 5
     CHANNELS = 3 
     COLORSPACE = 'I420'
+    MAX_BUFFERS = 1000
     LIVE = False
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
@@ -108,12 +109,12 @@ class EncodingTest:
             if 'pattern' in sample:
                 framerate = 30
                 sample_name, w, h, framerate = self.parse_pattern(sample)
-                num_buffers, bufsize, caps = video.generate_buffers_from_pattern(colorspace, w, h, self.RAW_BUF_FILE, pattern=sample_name, framerate=framerate)
+                num_buffers, bufsize, caps = video.generate_buffers_from_pattern(colorspace, w, h, self.RAW_BUF_FILE, pattern=sample_name, framerate=framerate, max_buffers=self.MAX_BUFFERS)
                 input_file = self.RAW_BUF_FILE
             elif 'sample' in sample:
                 sample_name, w, h, framerate = video.parse_sample_string(sample)
                 input_file_path = os.path.join('samples', sample_name)
-                num_buffers, bufsize, caps = video.generate_buffers_from_file(input_file_path, colorspace, w, h, self.RAW_BUF_FILE, framerate=framerate)
+                num_buffers, bufsize, caps = video.generate_buffers_from_file(input_file_path, colorspace, w, h, self.RAW_BUF_FILE, framerate=framerate, max_buffers=self.MAX_BUFFERS)
                 input_file = self.RAW_BUF_FILE
 
             if num_buffers:
