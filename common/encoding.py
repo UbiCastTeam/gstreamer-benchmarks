@@ -58,7 +58,7 @@ class EncodingTest:
         print('Wrote results to %s' % fname)
 
     def get_test_banner(self):
-        info = "Gstreamer %s: %s Encoding benchmark (%s passes), GPU: %s CPU: %s" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu())
+        info = "Gstreamer %s: %s Encoding benchmark (%s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.LIVE)
         info += "\nEncoder\tSample\tMean fps\tMin fps\tMax fps\tMean Mpix/s\tMin Mpix/s\tMax Mpix/s"
         return info
 
