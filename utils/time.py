@@ -4,6 +4,7 @@
 
 import time
 import socket
+import os
 
 def time_took(function):
     before = time.time()
@@ -20,5 +21,8 @@ def time_took_ms(function):
     return time_took(function)*1000
 
 def get_timestamped_fname():
-    ts = int(time.time())
-    return "result-%s-%s.txt" % (socket.gethostname(), ts)
+    ts = time.strftime('%Y-%m-%d-%H-%M')
+    fname = 'result-%s-%s.txt' % (socket.gethostname(), ts)
+    if os.path.exists(fname):
+        fname += '-1' 
+    return fname
