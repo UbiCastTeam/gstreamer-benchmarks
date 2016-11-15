@@ -18,6 +18,7 @@ class EncodingTest:
 
     # ensure that /tmp is a tmpfs or ramfs
     RAW_BUF_FILE = '/tmp/buf.raw'
+    SAMPLES_FOLDER = 'samples'
 
     PASS_COUNT = 5
     CHANNELS = 3 
@@ -39,7 +40,11 @@ class EncodingTest:
 
     SAMPLES = [
         'pattern=black-1920-1080-30',
-        'sample=bbb-1920-1080-30.mp4',
+        'pattern=smpte-1920-1080-30',
+        'pattern=snow-1920-1080-30',
+        'pattern=black-3840-2160-30',
+        'pattern=smpte-3840-2160-30',
+        'pattern=snow-3840-2160-30',
     ]
 
     CMD_PATTERN = "gst-launch-1.0 -f filesrc location=%s blocksize=%s ! %s ! tee name=encoder ! %s"
@@ -58,12 +63,6 @@ class EncodingTest:
     def parse_pattern(self, pattern_string):
         name, w, h, f = pattern_string.split('=')[1].split('-')
         return name, int(w), int(h), int(f)
-
-    def parse_sample(self, sample_string):
-        filename = sample_string.split('=')[1]
-        prefix = os.path.splitext(filename)[0]
-        w, h, f = prefix.split('-')[1:]
-        return filename, int(w), int(h), int(f)
 
     def run(self):
         success = False
@@ -97,7 +96,9 @@ class EncodingTest:
             'cpu_count': hw.cpu_count(),
         }
 
+        self.SAMPLES.extend(video.scan_samples_folder(self.SAMPLES_FOLDER))
         total_tests = len(self.SAMPLES) * self.CHANNELS * len(self.PLUGINS)
+        print('About to run %s tests with these samples:\n\t%s' %(total_tests, "\n\t".join(self.SAMPLES)))
         test_count = 0
         for sample in self.SAMPLES:
             num_buffers = None
@@ -107,7 +108,7 @@ class EncodingTest:
                 num_buffers, bufsize, caps = video.generate_buffers_from_pattern(colorspace, w, h, self.RAW_BUF_FILE, pattern=sample_name, framerate=framerate)
                 input_file = self.RAW_BUF_FILE
             elif 'sample' in sample:
-                sample_name, w, h, framerate = self.parse_sample(sample)
+                sample_name, w, h, framerate = video.parse_sample_string(sample)
                 input_file_path = os.path.join('samples', sample_name)
                 num_buffers, bufsize, caps = video.generate_buffers_from_file(input_file_path, colorspace, w, h, self.RAW_BUF_FILE, framerate=framerate)
                 input_file = self.RAW_BUF_FILE

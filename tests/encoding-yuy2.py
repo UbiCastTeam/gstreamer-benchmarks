@@ -30,7 +30,5 @@ def run():
         'pattern=black-3840-2160-30',
         'pattern=smpte-3840-2160-30',
         'pattern=snow-3840-2160-30',
-        'sample=bbb-1920-1080-30.mp4',
-        'sample=bbb-3840-2160-30.mp4',
     ]
     return e.run()

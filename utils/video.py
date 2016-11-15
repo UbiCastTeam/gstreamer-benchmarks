@@ -122,3 +122,27 @@ def generate_buffers_from_pattern(colorspace, width, height, raw_buf_file=RAW_BU
     #caps = pattern_caps.format(**format_dict) 
     caps = "videoparse width=%s height=%s framerate=%s format=%s" %(width, height, framerate, colorspace.lower())
     return num_buffers, bufsize, caps
+
+def scan_samples_folder(folder, extensions=[".mp4", ".qt"]):
+    print('Scanning folder %s for samples with these extensions: %s' % (folder, " ".join(extensions)))
+    files = list()
+    for f in os.listdir(folder):
+        sample_string = "sample=%s" % f 
+        if os.path.splitext(f)[1] in extensions and check_sample_string(sample_string):
+            files.append(sample_string)
+    return files
+
+def check_sample_string(sample_string):
+    try:
+        parse_sample_string(sample_string)
+        return True
+    except Exception as e:
+        print(e)
+        print('Sample %s not formatted as expected, should be like bbb-1920-1080-30.mp4' % fname)
+        return False
+
+def parse_sample_string(sample_string):
+    filename = sample_string.split('=')[1]
+    prefix = os.path.splitext(filename)[0]
+    w, h, f = prefix.split('-')[1:]
+    return filename, int(w), int(h), int(f)

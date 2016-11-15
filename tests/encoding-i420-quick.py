@@ -23,6 +23,7 @@ def run():
 
     e.SAMPLES = [
         'pattern=black-1920-1080-30',
-        'sample=test-1920-1080-30.mp4',
+        'pattern=smpte-1920-1080-30',
+        'pattern=snow-1920-1080-30',
     ]
     return e.run()
