@@ -148,11 +148,15 @@ class EncodingTest:
                                             fps = int(round(num_buffers_test/took))
                                         else:
                                             realtime_duration = num_buffers/framerate
+                                            fps = int(round(framerate*(realtime_duration / took)))
                                             # Assuming that encoders should not be late by more than 1 sec 
                                             if int(took) > realtime_duration:
-                                                print('Slower than realtime, aborting next tests')
-                                                abort = True
-                                            fps = int(round(framerate*(realtime_duration / took)))
+                                                # If multiple passes are expected, run at least twice
+                                                if self.PASS_COUNT == 1 or (self.PASS_COUNT > 1 and i > 0):
+                                                    print('Slower than realtime, aborting next tests')
+                                                    abort = True
+                                                else:
+                                                    print('Slower than realtime, trying again')
                                     else:
                                         fps = 0
                                     fps_results.append(fps)
