@@ -62,10 +62,33 @@ Results are written to a text file (result-hostname-1476458424.txt) as a tsv (ta
 ###########################################
 
 [Pass]
-Gstreamer 1.9.90: I420 Encoding benchmark, GPU: Intel Corporation Xeon E3-1200 v3/4th Gen Core Processor Integrated Graphics Controller (rev 06) CPU: Intel(R) Core(TM) i7-4771 CPU @ 3.50GHz Intel(R) Haswell Desktop
-Encoder Sample  Mean fps    Min fps Max fps Mean Mpix/s Min Mpix/s  Max Mpix/s
-x264enc speed-preset=ultrafast bitrate=20000 tune=zerolatency key-int-max=30    pattern=black-1920-1080-30  316 307 328 655 637 680
-vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=black-1920-1080-30  154 150 159 320 311 330
+Gstreamer 1.10.0: I420 Encoding benchmark (mean fps over 1 passes), GPU: Intel Corporation 3rd Gen Core processor Graphics Controller (rev 09) CPU: Intel(R) Core(TM) i5-3230M CPU @ 2.60GHz Intel(R) Ivybridge Mobile (live mode: False)
+Encoder Sample  fps +/-
+x264enc speed-preset=ultrafast bitrate=20000 tune=zerolatency key-int-max=30    pattern=black-1920-1080-30-1ch  146 0
+vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=black-1920-1080-30-1ch  147 0
+x264enc speed-preset=ultrafast bitrate=20000 tune=zerolatency key-int-max=30    pattern=smpte-1920-1080-30-1ch  123 0
+vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=smpte-1920-1080-30-1ch  137 0
+x264enc speed-preset=ultrafast bitrate=20000 tune=zerolatency key-int-max=30    pattern=snow-1920-1080-30-1ch   74  0
+vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=snow-1920-1080-30-1ch   144 0
+```
+
+You can also convert the result file to an ASCII-style table suitable for email/ticket inclusion:
+
+```
+./tabulate_results.py result-myhost-2016-11-16-23-32.txt 
+
+Gstreamer 1.10.0: I420 Encoding benchmark (mean fps over 1 passes), GPU: Intel Corporation 3rd Gen Core processor Graphics Controller (rev 09) CPU: Intel(R) Core(TM) i5-3230M CPU @ 2.60GHz Intel(R) Ivybridge Mobile (live mode: False)
+
+            Encoder                           Sample               fps    +/-
+--------------------------------  ------------------------------  -----  -----
+x264enc speed-preset=ultrafast..  pattern=black-1920-1080-30-1ch   146     0
+vaapih264enc rate-control=2 bi..  pattern=black-1920-1080-30-1ch   147     0
+x264enc speed-preset=ultrafast..  pattern=smpte-1920-1080-30-1ch   123     0
+vaapih264enc rate-control=2 bi..  pattern=smpte-1920-1080-30-1ch   137     0
+x264enc speed-preset=ultrafast..  pattern=snow-1920-1080-30-1ch    74      0
+vaapih264enc rate-control=2 bi..  pattern=snow-1920-1080-30-1ch    144     0
+
+Table is 77 lines wide
 ```
 
 ## Deps
@@ -77,5 +100,6 @@ vaapih264enc rate-control=2 bitrate=20000 keyframe-period=30    pattern=black-19
 * gst-plugins-ugly
 * gstreamer-vaapi
 * gst-libav (optional, for samples)
+* python-tabulate (for the tabulate_results.py script)
 
 nvenc (in -bad) must be compiled by hand
