@@ -20,7 +20,7 @@ optional arguments:
 
 ## Adding video samples
 
-To use actual video samples instead of generated video, just drop them into samples/ with the following filename syntax: name-width-height-framerate.mp4 (e.g. bbb-1920-1080-30.mp4) and add them to the SAMPLES variable in the actual test: 
+To use actual video samples instead of generated video, just drop them into samples/ with the following filename syntax: name-width-height-framerate.mp4 (e.g. bbb-1920-1080-30.mp4), they will be added automatically; you can disable the sample auto scanning by setting SCAN_SAMPLES to False, but you can still add them to the SAMPLES variable in the actual test:
 
 ```
     e.SAMPLES = [
