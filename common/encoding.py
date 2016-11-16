@@ -59,8 +59,8 @@ class EncodingTest:
         print('Wrote results to %s' % fname)
 
     def get_test_banner(self):
-        info = "Gstreamer %s: %s Encoding benchmark (%s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.LIVE)
-        info += "\nEncoder\tSample\tMean fps\tMin fps\tMax fps\tMean Mpix/s\tMin Mpix/s\tMax Mpix/s"
+        info = "Gstreamer %s: %s Encoding benchmark (mean fps over %s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.LIVE)
+        info += "\nEncoder\tSample\tfps\t+/-"
         return info
 
     def parse_pattern(self, pattern_string):
@@ -146,7 +146,6 @@ class EncodingTest:
                                     if took:
                                         if not self.LIVE:
                                             fps = int(round(num_buffers_test/took))
-                                            mpx = int(round(fps*w*h/1000000))
                                         else:
                                             realtime_duration = num_buffers/framerate
                                             # Assuming that encoders should not be late by more than 1 sec 
@@ -154,15 +153,13 @@ class EncodingTest:
                                                 print('Slower than realtime, aborting next tests')
                                                 abort = True
                                             fps = int(round(framerate*(realtime_duration / took)))
-                                            mpx = int(round(channel_count*fps*w*h/1000000))
                                     else:
                                         fps = 0
-                                        mpx = 0
                                     fps_results.append(fps)
-                                    mpx_results.append(mpx)
                                 sample_desc = "%s-%sch" % (sample, channel_count)
-                                result = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" %(plugin_string, sample_desc, int(mean(fps_results)), min(fps_results), max(fps_results), int(mean(mpx_results)), min(mpx_results), max(mpx_results))
-                                #print(result)
+                                mean_fps = int(round(mean(fps_results)))
+                                variation_fps = int(max(max(fps_results) - mean_fps, mean_fps - min(fps_results)))
+                                result = "%s\t%s\t%s\t%s" %(plugin_string, sample_desc, mean_fps, variation_fps)
                                 info += "\n%s" %result
                                 success = True
         if os.path.exists(self.RAW_BUF_FILE):
