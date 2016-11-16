@@ -54,7 +54,7 @@ Available tests:
 ```
 ## Output
 
-Results are written to a text file (result-hostname-1476458424.txt) as a tsv (tab-separated file)
+Results are written to a text file (result-hostname-2016-11-16-23-32.txt) as a tsv (tab-separated file)
 
 ```
 ###########################################
