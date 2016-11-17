@@ -7,7 +7,7 @@ import time
 
 from statistics import mean
 
-from utils.files import get_timestamped_fname
+from utils.files import write_timestamped_results, write_results 
 from utils.process import run_gst_cmd, run_cmd
 from utils.colors import print_red 
 
@@ -17,21 +17,33 @@ import utils.hardware as hw
 
 class EncodingTest:
 
-    # ensure that /tmp is a tmpfs or ramfs
+    # should be a tmpfs or ramfs in order to automatically 
+    # generate a sample that fits into RAM
     RAW_BUF_FILE = '/tmp/buf.raw'
-    RAW_REF_FILE = 'reference.mkv'
-    OUTPUT_FOLDER = 'out'
-    OUTPUT_FILE_TEMPLATE = 'output-%s.mkv'
-    SAMPLES_FOLDER = 'samples'
 
     PASS_COUNT = 5
     CHANNELS = 3 
     COLORSPACE = 'I420'
     MAX_BUFFERS = 1000
 
+    # If set, will simulate live operation by setting sync=true on sinks
+    # Will add more and more encoders until it takes longer to encode
+    # than realtime
     ENABLE_LIVE = False
+
+    # If set, instead of testing each available plugin one after another
+    # will combine them to try to maximize performance
+    ENABLE_PARALLEL_PLUGINS = False
+
+    # If set, will compare the output with the input using qpsnr (ssim, psnr, ...)
     ENABLE_QUALITY_ANALYSIS = False
+    # Available methods: psnr, avg_psnr, ssim, avg_ssim, see qpsnr -h for more info
     QUALITY_METHOD = 'avg_ssim'
+    # Reference file path used for quality analysis (will be remuxed from the raw sample)
+    RAW_REF_FILE = 'reference.mkv'
+    # Subfolder which will contain rendered files (named after OUTPUT_FILE_TEMPLATE)
+    OUTPUT_FOLDER = 'out'
+    OUTPUT_FILE_TEMPLATE = 'output-%s.mkv'
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
     # available keys are
@@ -47,10 +59,14 @@ class EncodingTest:
     PLUGINS_JETSON = []
     PLUGINS_NV = []
 
+    # List of bitrates in kbit/s
     BITRATES_K = [
         20000,
     ]
 
+    # List of available input samples
+    # Can be generated with videotestsrc (see available patterns)
+    # Can be mp4/qt video samples located into the SAMPLES_FOLDER 
     SAMPLES = [
         'pattern=black-1920-1080-30',
         'pattern=smpte-1920-1080-30',
@@ -59,20 +75,11 @@ class EncodingTest:
         'pattern=smpte-3840-2160-30',
         'pattern=snow-3840-2160-30',
     ]
+    # If enabled, will scan the SAMPLES_FOLDER automatically; else, add them manually
     SCAN_SAMPLES = True
+    SAMPLES_FOLDER = 'samples'
 
     CMD_PATTERN = "gst-launch-1.0 -f filesrc location=%s blocksize=%s ! %s ! tee name=encoder ! %s"
-
-    def write_timestamped_results(self, data):
-        fname = get_timestamped_fname()
-        with open(fname, 'w') as f:
-            f.write(data)
-        print('Wrote results to %s' % fname)
-
-    def write_results(self, data, path):
-        with open(path, 'w') as f:
-            f.write(data)
-        print('Wrote %s' % path)
 
     def get_test_banner(self):
         info = "Gstreamer %s: %s Encoding benchmark (mean fps over %s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.ENABLE_LIVE)
@@ -109,9 +116,14 @@ class EncodingTest:
             if is_plugin_present(plugin[0]):
                 available_plugins.append(plugin[1])
 
+        if self.ENABLE_PARALLEL_PLUGINS:
+            parallel_plugins = list(available_plugins)
+            # only keep a single item in the plugin list because we will parallelize them
+            available_plugins = ['parallel'] 
+
         if self.SCAN_SAMPLES:
             self.SAMPLES.extend(video.scan_samples_folder(self.SAMPLES_FOLDER))
-        total_tests = len(self.SAMPLES) * self.CHANNELS * len(self.PLUGINS) * len(self.BITRATES_K)
+        total_tests = len(self.SAMPLES) * self.CHANNELS * len(available_plugins) * len(self.BITRATES_K)
         print('About to run %s tests with these samples:\n\t%s' %(total_tests, "\n\t".join(self.SAMPLES)))
         test_count = 0
 
@@ -143,8 +155,6 @@ class EncodingTest:
                                     'keyframes': 30,
                                     'cpu_count': hw.cpu_count(),
                                 }
-                                plugin_string = plugin_string_template.format(**encoding_params)
-                                encoders = list()
 
                                 if self.ENABLE_QUALITY_ANALYSIS:
                                     if not os.path.isdir(self.OUTPUT_FOLDER):
@@ -152,6 +162,8 @@ class EncodingTest:
                                 else:
                                     sink = "fakesink sync=%s" % self.ENABLE_LIVE
 
+                                encoders = list()
+                                encoders_short = list()
                                 for i in range(1, channel_count + 1):
                                     if self.ENABLE_QUALITY_ANALYSIS:
                                         output_file_name = self.OUTPUT_FILE_TEMPLATE % output_file_count
@@ -159,7 +171,18 @@ class EncodingTest:
                                         output_files.append(output_file_name)
                                         sink = sink_pattern % (output_file_count, output_file_count)
                                     output_file_count += 1
+                                    if self.ENABLE_PARALLEL_PLUGINS:
+                                        plugin_string_template = parallel_plugins[i % len(parallel_plugins)]
+                                    plugin_string = plugin_string_template.format(**encoding_params)
                                     encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! %s "  % (i, plugin_string, sink))
+                                    encoders_short.append(plugin_string)
+                                if self.ENABLE_PARALLEL_PLUGINS:
+                                    plugin_string = ""
+                                    for p in self.PLUGINS:
+                                        pname = p[0]
+                                        pname_count = " ".join(encoders).count(pname)
+                                        if pname_count > 0:
+                                            plugin_string += "%s x%s " %(pname, pname_count)
                                 encoders_string = "encoder. ! ".join(encoders)
                                 num_buffers_test = channel_count*num_buffers
                                 cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
@@ -208,7 +231,7 @@ class EncodingTest:
                                     success = True
         if os.path.exists(self.RAW_BUF_FILE):
             os.remove(self.RAW_BUF_FILE)
-        self.write_timestamped_results(info)
+        write_timestamped_results(info)
         return (success, info)
 
     def get_quality_score(self, raw_caps, framerate, files):
@@ -238,7 +261,7 @@ class EncodingTest:
         fname = ''
         if warnings:
             fname = os.path.join(self.OUTPUT_FOLDER, '%s-%s.log' % (self.QUALITY_METHOD, int(time.time())))
-            self.write_results('\n'.join(warnings), fname)
+            write_results('\n'.join(warnings), fname)
         return mean(scores), min(scores), fname
 
 if __name__ == '__main__':
