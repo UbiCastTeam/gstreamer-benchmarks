@@ -18,7 +18,12 @@ except Exception:
     print('Provide tsv file as argument')
     sys.exit()
 
-def limit_size(string, max_len = 30):
+try:
+    MAX_LEN = int(sys.argv[2])
+except Exception:
+    MAX_LEN = 30
+
+def limit_size(string, max_len = MAX_LEN):
     if len(string) > max_len:
         return string[:max_len] + '..' 
     return string
