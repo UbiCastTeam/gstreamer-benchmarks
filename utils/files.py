@@ -4,7 +4,8 @@
 
 import os
 from utils.process import get_stdout
-
+import time
+import socket
 
 def read_file(path):
     with open(path, 'r') as f:
@@ -27,3 +28,11 @@ def check_path_is_writable(path='/tmp'):
 def check_path_is_tmpfs(path='/tmp'):
     d = get_stdout('df %s | tail -n 1' % path, shell=True)
     return d.startswith('tmpfs')
+
+def get_timestamped_fname(suffix=None):
+    ts = time.strftime('%Y-%m-%d-%H-%M-%S')
+    prefix = 'result-%s-%s' % (socket.gethostname().split('.')[0], ts)
+    if suffix: 
+        prefix += '-%s' % suffix
+    fname = prefix + '.txt'
+    return fname

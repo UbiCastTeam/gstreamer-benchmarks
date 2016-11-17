@@ -3,10 +3,11 @@
 # Copyright 2015, Florent Thiery 
 
 import os
+import time
 
 from statistics import mean
 
-from utils.time import get_timestamped_fname
+from utils.files import get_timestamped_fname
 from utils.process import run_gst_cmd, run_cmd
 from utils.colors import print_red 
 
@@ -30,6 +31,7 @@ class EncodingTest:
 
     ENABLE_LIVE = False
     ENABLE_QUALITY_ANALYSIS = False
+    QUALITY_METHOD = 'avg_ssim'
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
     # available keys are
@@ -57,15 +59,22 @@ class EncodingTest:
 
     CMD_PATTERN = "gst-launch-1.0 -f filesrc location=%s blocksize=%s ! %s ! tee name=encoder ! %s"
 
-    def write_results(self, data):
+    def write_timestamped_results(self, data):
         fname = get_timestamped_fname()
         with open(fname, 'w') as f:
             f.write(data)
         print('Wrote results to %s' % fname)
 
+    def write_results(self, data, path):
+        with open(path, 'w') as f:
+            f.write(data)
+        print('Wrote %s' % path)
+
     def get_test_banner(self):
         info = "Gstreamer %s: %s Encoding benchmark (mean fps over %s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.ENABLE_LIVE)
-        info += "\nEncoder\tSample\tfps\t+/-\tq"
+        info += "\nEncoder\tSample\tfps\t+/-"
+        if self.ENABLE_QUALITY_ANALYSIS:
+            info += "\tq\tminq\tqlog"
         return info
 
     def parse_pattern(self, pattern_string):
@@ -160,14 +169,16 @@ class EncodingTest:
                             else:
                                 print('<<< Running test (%s passes, %s channels): %s (%s)' %(self.PASS_COUNT, channel_count, plugin_string, sample))
                                 fps_results = list()
+                                quality_results = list()
+                                min_quality_results = list()
                                 for i in range(self.PASS_COUNT):
                                     # Run it twice to ensure that file was in cache
                                     took = run_gst_cmd(cmd)
                                     if took:
                                         if self.ENABLE_QUALITY_ANALYSIS:
-                                            quality = self.get_quality_score(caps, framerate, output_files)
-                                        else:
-                                            quality = 0
+                                            quality, min_quality, quality_log = self.get_quality_score(caps, framerate, output_files)
+                                            quality_results.append(quality)
+                                            min_quality_results.append(min_quality)
                                         if not self.ENABLE_LIVE:
                                             fps = int(round(num_buffers_test/took))
                                         else:
@@ -187,12 +198,14 @@ class EncodingTest:
                                 sample_desc = "%s-%sch" % (sample, channel_count)
                                 mean_fps = int(round(mean(fps_results)))
                                 variation_fps = int(max(max(fps_results) - mean_fps, mean_fps - min(fps_results)))
-                                result = "%s\t%s\t%s\t%s\t%.2f" %(plugin_string, sample_desc, mean_fps, variation_fps, quality)
+                                result = "%s\t%s\t%s\t%s" %(plugin_string, sample_desc, mean_fps, variation_fps)
+                                if self.ENABLE_QUALITY_ANALYSIS:
+                                    result += '\t%.2f\t%.2f\t%s' %(quality, min(min_quality_results), quality_log)
                                 info += "\n%s" %result
                                 success = True
         if os.path.exists(self.RAW_BUF_FILE):
             os.remove(self.RAW_BUF_FILE)
-        self.write_results(info)
+        self.write_timestamped_results(info)
         return (success, info)
 
     def get_quality_score(self, raw_caps, framerate, files):
@@ -200,11 +213,12 @@ class EncodingTest:
         cmd = 'gst-launch-1.0 filesrc location=%s ! %s ! matroskamux ! filesink location=%s' % (self.RAW_BUF_FILE, raw_caps, muxed_raw_file)
         print('Muxing raw file for quality analysis')
         rc, stdout, stderr = run_cmd(cmd)
-        cmd = 'qpsnr -a avg_ssim -o fps=%s -r %s %s' % (framerate, muxed_raw_file, ' '.join([os.path.join(self.OUTPUT_FOLDER, f) for f in files]))
-        print('Running quality analysis')
+        cmd = 'qpsnr -a %s -o fps=%s -r %s %s' % (self.QUALITY_METHOD, framerate, muxed_raw_file, ' '.join([os.path.join(self.OUTPUT_FOLDER, f) for f in files]))
+        print('Running quality analysis with %s' % self.QUALITY_METHOD)
         rc, stdout, stderr = run_cmd(cmd)
         scores = list()
-        header = ''
+        header = list()
+        warnings = list()
         for index, line in enumerate(stdout.split('\n')):
             if line:
                 fields = line.strip(',').split(',')
@@ -216,9 +230,14 @@ class EncodingTest:
                     for index, score in enumerate(scores_line):
                         scores.append(score)
                         if score < 0.99:
-                            print('frame %s of %s is below threshold : %s' % (frame_count, header[index + 1], score))
+                            warning = 'frame %s of %s is below threshold : %s' % (frame_count, header[index + 1], score)
+                            warnings.append(warning)
         os.remove(muxed_raw_file)
-        return mean(scores)
+        fname = ''
+        if warnings:
+            fname = os.path.join(self.OUTPUT_FOLDER, '%s-%s.log' % (self.QUALITY_METHOD, int(time.time())))
+            self.write_results('\n'.join(warnings), fname)
+        return mean(scores), min(scores), fname
 
 if __name__ == '__main__':
     from utils.run import run_test
