@@ -5,7 +5,7 @@
 import utils.process as process
 
 def is_plugin_present(plugin_name):
-    result = process.check_cmd('gst-inspect-1.0 %s &> /dev/null' %plugin_name, shell=True, complain=False)[0]
+    result = process.check_cmd('gst-inspect-1.0 %s &> /dev/null' %plugin_name.split(' ')[0], shell=True, complain=False)[0]
     if not result:
         print('Plugin %s not found' % plugin_name)
     return result
