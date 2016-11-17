@@ -101,5 +101,6 @@ Table is 77 lines wide
 * gstreamer-vaapi
 * gst-libav (optional, for samples)
 * python-tabulate (for the tabulate_results.py script)
+* qpsnr (when quality analysis is enabled)
 
 nvenc (in -bad) must be compiled by hand
