@@ -9,10 +9,10 @@ def run():
     e.COLORSPACE = 'I420'
     e.RAW_BUF_FILE = '/tmp/buf.raw'
     e.RAW_BUF_FILE = '/tmp/buf.raw'
-    e.PASS_COUNT = 1
+    e.PASS_COUNT = 2
     e.CHANNELS = 10
     e.MAX_BUFFERS = 150
-    e.LIVE = True
+    e.ENABLE_LIVE = True
     e.SCAN_SAMPLES = False
 
     e.PLUGINS = [

@@ -24,7 +24,8 @@ class EncodingTest:
     CHANNELS = 3 
     COLORSPACE = 'I420'
     MAX_BUFFERS = 1000
-    LIVE = False
+
+    ENABLE_LIVE = False
 
     # each plugin is a list: ['plugin_name', 'plugin_bin_description'] 
     # available keys are
@@ -59,7 +60,7 @@ class EncodingTest:
         print('Wrote results to %s' % fname)
 
     def get_test_banner(self):
-        info = "Gstreamer %s: %s Encoding benchmark (mean fps over %s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.LIVE)
+        info = "Gstreamer %s: %s Encoding benchmark (mean fps over %s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.ENABLE_LIVE)
         info += "\nEncoder\tSample\tfps\t+/-"
         return info
 
@@ -126,7 +127,7 @@ class EncodingTest:
                             plugin_string = plugin_string.format(**encoding_params)
                             encoders = list()
                             for i in range(1, channel_count + 1):
-                                encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! fakesink sync=%s "  % (i, plugin_string, self.LIVE))
+                                encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! fakesink sync=%s "  % (i, plugin_string, self.ENABLE_LIVE))
                             encoders_string = "encoder. ! ".join(encoders)
                             num_buffers_test = channel_count*num_buffers
                             cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
@@ -144,7 +145,7 @@ class EncodingTest:
                                     # Run it twice to ensure that file was in cache
                                     took = run_gst_cmd(cmd)
                                     if took:
-                                        if not self.LIVE:
+                                        if not self.ENABLE_LIVE:
                                             fps = int(round(num_buffers_test/took))
                                         else:
                                             realtime_duration = num_buffers/framerate
