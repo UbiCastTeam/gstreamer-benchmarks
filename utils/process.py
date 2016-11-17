@@ -10,7 +10,7 @@ ERRORS = (
     'ERROR',
 )
 
-def _run_cmd(cmd, shell=False):
+def run_cmd(cmd, shell=False):
     env = dict(os.environ)
     env["LANG"] = "C"
     if shell:
@@ -39,24 +39,21 @@ def parse_gst_execution_time(stdout):
                 return int(h)*3600 + int(m)*60 + float(s)
 
 def get_stdout(cmd, shell=False):
-    rc, stdout, stderr = _run_cmd(cmd, shell=shell)
+    rc, stdout, stderr = run_cmd(cmd, shell=shell)
     return stdout
 
 def check_cmd(cmd, shell=False, complain=True):
     try:
-        _run_cmd(cmd, shell=shell)
+        run_cmd(cmd, shell=shell)
         return True, 'no errors'
     except Exception as e:
         if complain:
             print(e)
         return False, e
 
-def run_cmd(cmd, shell=False):
-    rc, stdout, stderr = _run_cmd(cmd, shell=shell)
-
 def run_gst_cmd(cmd):
     try:
-        rc, stdout, stderr = _run_cmd(cmd, shell=False)
+        rc, stdout, stderr = run_cmd(cmd, shell=False)
         took = parse_gst_execution_time(stdout)
     except Exception as e:
         print(e)
