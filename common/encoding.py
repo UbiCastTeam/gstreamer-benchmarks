@@ -47,6 +47,10 @@ class EncodingTest:
     PLUGINS_JETSON = []
     PLUGINS_NV = []
 
+    BITRATES_K = [
+        20000,
+    ]
+
     SAMPLES = [
         'pattern=black-1920-1080-30',
         'pattern=smpte-1920-1080-30',
@@ -105,17 +109,9 @@ class EncodingTest:
             if is_plugin_present(plugin[0]):
                 available_plugins.append(plugin[1])
 
-        bitrate_kbps = 20000
-        encoding_params = {
-            'bitrate_kb': bitrate_kbps,
-            'bitrate': bitrate_kbps*1000,
-            'keyframes': 30,
-            'cpu_count': hw.cpu_count(),
-        }
-
         if self.SCAN_SAMPLES:
             self.SAMPLES.extend(video.scan_samples_folder(self.SAMPLES_FOLDER))
-        total_tests = len(self.SAMPLES) * self.CHANNELS * len(self.PLUGINS)
+        total_tests = len(self.SAMPLES) * self.CHANNELS * len(self.PLUGINS) * len(self.BITRATES_K)
         print('About to run %s tests with these samples:\n\t%s' %(total_tests, "\n\t".join(self.SAMPLES)))
         test_count = 0
 
@@ -134,87 +130,93 @@ class EncodingTest:
 
             output_file_count = 0
             if num_buffers:
-                for plugin_string in available_plugins:
+                for plugin_string_template in available_plugins:
                     abort = False
                     for channel_count in range(1, self.CHANNELS + 1):
                         output_files = list()
-                        test_count += 1
-                        if not abort:
-                            plugin_string = plugin_string.format(**encoding_params)
-                            encoders = list()
+                        for bitrate_kbps in self.BITRATES_K:
+                            test_count += 1
+                            if not abort:
+                                encoding_params = {
+                                    'bitrate_kb': bitrate_kbps,
+                                    'bitrate': bitrate_kbps*1000,
+                                    'keyframes': 30,
+                                    'cpu_count': hw.cpu_count(),
+                                }
+                                plugin_string = plugin_string_template.format(**encoding_params)
+                                encoders = list()
 
-                            if self.ENABLE_QUALITY_ANALYSIS:
-                                if not os.path.isdir(self.OUTPUT_FOLDER):
-                                    os.mkdir(self.OUTPUT_FOLDER)
-                            else:
-                                sink = "fakesink sync=%s" % self.ENABLE_LIVE
-
-                            for i in range(1, channel_count + 1):
                                 if self.ENABLE_QUALITY_ANALYSIS:
-                                    output_file_name = self.OUTPUT_FILE_TEMPLATE % output_file_count
-                                    sink_pattern = 'matroskamux ! tee name=tee%%s ! queue ! filesink location=%s tee%%s. ! queue ! fakesink sync=%s' % (os.path.join(self.OUTPUT_FOLDER, output_file_name), self.ENABLE_LIVE)
-                                    output_files.append(output_file_name)
-                                    sink = sink_pattern % (output_file_count, output_file_count)
-                                output_file_count += 1
-                                encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! %s "  % (i, plugin_string, sink))
-                            encoders_string = "encoder. ! ".join(encoders)
-                            num_buffers_test = channel_count*num_buffers
-                            cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
+                                    if not os.path.isdir(self.OUTPUT_FOLDER):
+                                        os.mkdir(self.OUTPUT_FOLDER)
+                                else:
+                                    sink = "fakesink sync=%s" % self.ENABLE_LIVE
 
-                            # check cmd and push sample data into RAM
-                            print("Heating cache for test %s/%s (%i%%) %s" % (test_count, total_tests, 100*test_count/float(total_tests), plugin_string))
-                            took = run_gst_cmd(cmd)
-                            if took <= 0:
-                                print_red('<<< Heat test failed: %s' %plugin_string)
-                            else:
-                                print('<<< Running test (%s passes, %s channels): %s (%s)' %(self.PASS_COUNT, channel_count, plugin_string, sample))
-                                fps_results = list()
-                                quality_results = list()
-                                min_quality_results = list()
-                                for i in range(self.PASS_COUNT):
-                                    # Run it twice to ensure that file was in cache
-                                    took = run_gst_cmd(cmd)
-                                    if took:
-                                        if self.ENABLE_QUALITY_ANALYSIS:
-                                            quality, min_quality, quality_log = self.get_quality_score(caps, framerate, output_files)
-                                            quality_results.append(quality)
-                                            min_quality_results.append(min_quality)
-                                        if not self.ENABLE_LIVE:
-                                            fps = int(round(num_buffers_test/took))
+                                for i in range(1, channel_count + 1):
+                                    if self.ENABLE_QUALITY_ANALYSIS:
+                                        output_file_name = self.OUTPUT_FILE_TEMPLATE % output_file_count
+                                        sink_pattern = 'matroskamux ! tee name=tee%%s ! queue ! filesink location=%s tee%%s. ! queue ! fakesink sync=%s' % (os.path.join(self.OUTPUT_FOLDER, output_file_name), self.ENABLE_LIVE)
+                                        output_files.append(output_file_name)
+                                        sink = sink_pattern % (output_file_count, output_file_count)
+                                    output_file_count += 1
+                                    encoders.append("queue name=enc_%s max-size-buffers=1 ! %s ! %s "  % (i, plugin_string, sink))
+                                encoders_string = "encoder. ! ".join(encoders)
+                                num_buffers_test = channel_count*num_buffers
+                                cmd = self.CMD_PATTERN %(input_file, bufsize, caps, encoders_string)
+
+                                # check cmd and push sample data into RAM
+                                print("Heating cache for test %s/%s (%i%%) %s" % (test_count, total_tests, 100*test_count/float(total_tests), plugin_string))
+                                took = run_gst_cmd(cmd)
+                                if took <= 0:
+                                    print_red('<<< Heat test failed: %s' %plugin_string)
+                                else:
+                                    print('<<< Running test (%s passes, %s channels): %s (%s)' %(self.PASS_COUNT, channel_count, plugin_string, sample))
+                                    fps_results = list()
+                                    quality_results = list()
+                                    min_quality_results = list()
+                                    for i in range(self.PASS_COUNT):
+                                        # Run it twice to ensure that file was in cache
+                                        took = run_gst_cmd(cmd)
+                                        if took:
+                                            if self.ENABLE_QUALITY_ANALYSIS:
+                                                quality, min_quality, quality_log = self.get_quality_score(caps, framerate, output_files)
+                                                quality_results.append(quality)
+                                                min_quality_results.append(min_quality)
+                                            if not self.ENABLE_LIVE:
+                                                fps = int(round(num_buffers_test/took))
+                                            else:
+                                                realtime_duration = num_buffers/framerate
+                                                fps = int(round(framerate*(realtime_duration / took)))
+                                                # Assuming that encoders should not be late by more than 1 sec 
+                                                if int(took) > realtime_duration:
+                                                    # If multiple passes are expected, run at least twice
+                                                    if self.PASS_COUNT == 1 or (self.PASS_COUNT > 1 and i > 0):
+                                                        print('Slower than realtime, aborting next tests')
+                                                        abort = True
+                                                    else:
+                                                        print('Slower than realtime, trying again')
                                         else:
-                                            realtime_duration = num_buffers/framerate
-                                            fps = int(round(framerate*(realtime_duration / took)))
-                                            # Assuming that encoders should not be late by more than 1 sec 
-                                            if int(took) > realtime_duration:
-                                                # If multiple passes are expected, run at least twice
-                                                if self.PASS_COUNT == 1 or (self.PASS_COUNT > 1 and i > 0):
-                                                    print('Slower than realtime, aborting next tests')
-                                                    abort = True
-                                                else:
-                                                    print('Slower than realtime, trying again')
-                                    else:
-                                        fps = 0
-                                    fps_results.append(fps)
-                                sample_desc = "%s-%sch" % (sample, channel_count)
-                                mean_fps = int(round(mean(fps_results)))
-                                variation_fps = int(max(max(fps_results) - mean_fps, mean_fps - min(fps_results)))
-                                result = "%s\t%s\t%s\t%s" %(plugin_string, sample_desc, mean_fps, variation_fps)
-                                if self.ENABLE_QUALITY_ANALYSIS:
-                                    result += '\t%.2f\t%.2f\t%s' %(quality, min(min_quality_results), quality_log)
-                                info += "\n%s" %result
-                                success = True
+                                            fps = 0
+                                        fps_results.append(fps)
+                                    sample_desc = "%s-%sch" % (sample, channel_count)
+                                    mean_fps = int(round(mean(fps_results)))
+                                    variation_fps = int(max(max(fps_results) - mean_fps, mean_fps - min(fps_results)))
+                                    result = "%s\t%s\t%s\t%s" %(plugin_string, sample_desc, mean_fps, variation_fps)
+                                    if self.ENABLE_QUALITY_ANALYSIS:
+                                        result += '\t%.2f\t%.2f\t%s' %(quality, min(min_quality_results), quality_log)
+                                    info += "\n%s" %result
+                                    success = True
         if os.path.exists(self.RAW_BUF_FILE):
             os.remove(self.RAW_BUF_FILE)
         self.write_timestamped_results(info)
         return (success, info)
 
     def get_quality_score(self, raw_caps, framerate, files):
+        print('Running quality analysis with %s' % self.QUALITY_METHOD)
         muxed_raw_file = os.path.join(self.OUTPUT_FOLDER, self.RAW_REF_FILE)
         cmd = 'gst-launch-1.0 filesrc location=%s ! %s ! matroskamux ! filesink location=%s' % (self.RAW_BUF_FILE, raw_caps, muxed_raw_file)
-        print('Muxing raw file for quality analysis')
         rc, stdout, stderr = run_cmd(cmd)
         cmd = 'qpsnr -a %s -o fps=%s -r %s %s' % (self.QUALITY_METHOD, framerate, muxed_raw_file, ' '.join([os.path.join(self.OUTPUT_FOLDER, f) for f in files]))
-        print('Running quality analysis with %s' % self.QUALITY_METHOD)
         rc, stdout, stderr = run_cmd(cmd)
         scores = list()
         header = list()
