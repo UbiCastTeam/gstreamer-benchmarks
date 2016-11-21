@@ -40,11 +40,10 @@ def get_timestamped_fname(suffix=None):
 def write_timestamped_results(data):
     fname = get_timestamped_fname()
     with open(fname, 'w') as f:
-	f.write(data)
+        f.write(data)
     print('Wrote results to %s' % fname)
 
 def write_results(data, path):
     with open(path, 'w') as f:
-	f.write(data)
+        f.write(data)
     print('Wrote %s' % path)
-
