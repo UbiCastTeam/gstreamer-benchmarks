@@ -19,7 +19,7 @@ def run():
     ]
 
     e.PLUGINS_INTEL = [
-        ['vaapih264enc', 'vaapih264enc rate-control=2 bitrate={bitrate_kb} keyframe-period={keyframes}'],
+        ['vaapih264enc normal', 'vaapih264enc rate-control=2 bitrate={bitrate_kb} keyframe-period={keyframes}'],
         ['vaapih264enc tune=low-power', 'vaapih264enc tune=low-power bitrate={bitrate} keyframe-period={keyframes}'],
     ]
 
