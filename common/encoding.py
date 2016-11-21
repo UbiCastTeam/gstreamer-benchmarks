@@ -83,7 +83,7 @@ class EncodingTest:
 
     def get_test_banner(self):
         info = "Gstreamer %s: %s Encoding benchmark (mean fps over %s passes), GPU: %s CPU: %s (live mode: %s)" %(get_gst_version(), self.COLORSPACE, self.PASS_COUNT, hw.gpu(), hw.cpu(), self.ENABLE_LIVE)
-        info += '\nEncoder\tSample\tfps\t"+/-"'
+        info += '\nEncoder\tSample\tfps\tdeviation'
         if self.ENABLE_QUALITY_ANALYSIS:
             info += "\tq\tminq\tqlog"
         return info
