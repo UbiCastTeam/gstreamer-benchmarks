@@ -10,6 +10,7 @@ def run():
     e.RAW_BUF_FILE = '/tmp/buf.raw'
     e.PASS_COUNT = 1
     e.CHANNELS = 10
+    e.ENABLE_LIVE = True
     e.MAX_BUFFERS = 150
     e.ENABLE_PARALLEL_PLUGINS = True
 
@@ -24,7 +25,5 @@ def run():
 
     e.SAMPLES = [
         'pattern=black-1920-1080-30',
-        'pattern=smpte-1920-1080-30',
-        'pattern=snow-1920-1080-30',
     ]
     return e.run()
