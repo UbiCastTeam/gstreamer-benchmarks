@@ -24,17 +24,26 @@ RESOLUTIONS = [
     (3840, 2160),
 ]
 
-GL_PLATFORMS = [
+#MAX_BUFFERS = 90
+MAX_BUFFERS = 1000
+
+GST_GL_PLATFORMS = [
     'glx',
     'egl',
 ]
 
-GL_WINDOW = {
-    'egl': 'egl',
-    'glx': 'x11',
+GST_GL_WINDOW = {
+    #'egl': ['wayland', 'x11', 'dispmanx', 'android'],
+    'egl': ['x11'],
+    'glx': ['x11'],
 }
+# glx: x11 only
+# GST_GL_WINDOW=x11 under wayland will use xwayland 
+# egl: wayland x11, android, dispmanx (pi/broadcom)
+# window: "whatever" creates dummy window
+# only the pi supports opengl without xorg/wayland 
 
-# gst_gl_api = 'gles opengl3'
+GST_GL_API = ['gles2', 'opengl', 'opengl3']
 
 CSP = [
     'I420',
@@ -47,7 +56,7 @@ CSP = [
 
 def get_test_banner():
     info = "glimagesink benchmark, GPU: %s CPU: %s" %(hw.gpu(), hw.cpu())
-    info += "\nResolution\tColorspace\tFramerate"
+    info += "\nTest\tFramerate"
     return info
 
 def run():
@@ -55,28 +64,32 @@ def run():
     os.environ['vblank_mode'] = '0'
 
     info = get_test_banner()
-    for gl_platform in GL_PLATFORMS:
+    for gl_platform in GST_GL_PLATFORMS:
         os.environ['GST_GL_PLATFORM'] = gl_platform
-        os.environ['GST_GL_WINDOW'] = GL_WINDOW[gl_platform]
-        for colorspace in CSP:
-            for resolution in RESOLUTIONS:
-                w, h = resolution[0], resolution[1]
-                testname = "%sx%s %s" %(w, h, colorspace)
-                num_buffers, bufsize, caps = video.generate_buffers_from_pattern(colorspace, w, h, RAW_BUF_FILE)
+        gl_windows = GST_GL_WINDOW[gl_platform]
+        for gl_window in gl_windows:
+            os.environ['GST_GL_WINDOW'] = gl_window 
+            for gl_api in GST_GL_API:
+                os.environ['GST_GL_API'] = gl_api
+                for colorspace in CSP:
+                    for resolution in RESOLUTIONS:
+                        w, h = resolution[0], resolution[1]
+                        testname = "%s %s %s %sx%s %s" %(gl_platform, gl_window, gl_api, w, h, colorspace)
+                        num_buffers, bufsize, caps = video.generate_buffers_from_pattern(colorspace, w, h, RAW_BUF_FILE, max_buffers=MAX_BUFFERS)
 
-                cmd = cmd_pattern %(bufsize, caps)
+                        cmd = cmd_pattern %(bufsize, caps)
 
-                took = run_gst_cmd(cmd) 
-                if took <= 0:
-                    print_red('test %s failed' %testname)
-                else:
-                    # Run it twice to ensure that file was in cache
-                    print('Running %s test' %testname)
-                    took = run_gst_cmd(cmd)
-                    fps = int(round(num_buffers/took))
-                    result = "%s\t%sx%s\t%s\t%s" %(gl_platform, w, h, colorspace, fps)
-                    print(result)
-                    info += "\n%s" %result
+                        took = run_gst_cmd(cmd) 
+                        if took <= 0:
+                            print_red('test %s failed' %testname)
+                        else:
+                            # Run it twice to ensure that file was in cache
+                            print('Running %s test' %testname)
+                            took = run_gst_cmd(cmd)
+                            fps = int(round(num_buffers/took))
+                            result = "%s\t%s" %(testname, fps)
+                            print(result)
+                            info += "\n%s" %result
     if os.path.exists(RAW_BUF_FILE):
         os.remove(RAW_BUF_FILE)
     return (True, info)
