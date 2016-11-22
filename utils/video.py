@@ -16,13 +16,6 @@ COLORSPACES_BPP = {
     'NV12': 12,
 }
 
-RESOLUTIONS = [
-    (640, 480),
-    (1280, 720),
-    (1920, 1080),
-    (3840, 2160),
-]
-
 TMP_BUF_FILE = 'tmp.raw'
 
 def get_buffer_size_bytes(colorspace, width, height):
