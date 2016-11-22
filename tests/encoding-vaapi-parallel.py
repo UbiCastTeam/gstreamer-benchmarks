@@ -8,7 +8,7 @@ def run():
     e = EncodingTest()
     e.COLORSPACE = 'I420'
     e.RAW_BUF_FILE = '/tmp/buf.raw'
-    e.PASS_COUNT = 1
+    e.PASS_COUNT = 3
     e.CHANNELS = 10
     e.MAX_BUFFERS = 150
     e.ENABLE_PARALLEL_PLUGINS = True
