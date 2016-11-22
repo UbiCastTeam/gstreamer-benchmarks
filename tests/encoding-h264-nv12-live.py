@@ -9,6 +9,7 @@ def run():
     e.COLORSPACE = 'NV12'
     e.RAW_BUF_FILE = '/tmp/buf.raw'
     e.ENABLE_LIVE = True
+    e.CHANNELS = 20
     e.PLUGINS = [
             ['x264enc', 'x264enc speed-preset=ultrafast bitrate={bitrate_kb} tune=zerolatency key-int-max={keyframes}'],
     ]
